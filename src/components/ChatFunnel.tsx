@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Send, ArrowLeft, X, Check, Loader2, Camera,
-  ChevronRight, Clock, Shield, Phone
+  ChevronRight, Clock, Shield, Phone, MapPin, Paperclip, Navigation, FileText
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -24,6 +24,8 @@ type Step =
   | { id: string; bot: string; type: "boolean"; yes?: string; no?: string }
   | { id: string; bot: string; type: "choice"; options: string[] }
   | { id: string; bot: string; type: "photos"; minPhotos?: number }
+  | { id: string; bot: string; type: "files"; minFiles?: number }
+  | { id: string; bot: string; type: "location"; required?: boolean }
   | { id: string; bot: string; type: "longtext"; placeholder?: string; required?: boolean }
   | { id: string; bot: string; type: "final" };
 
@@ -32,6 +34,7 @@ export const STEPS: Step[] = [
   { id: "phone", bot: "Mucho gusto, {intro_name}. ¿Cuál es su número de teléfono? Solo lo usamos para llamarle con la oferta.", type: "phone", placeholder: "787-555-1234", required: true },
   { id: "email", bot: "¿Y su email? Le enviamos un resumen de la oferta por escrito.", type: "email", placeholder: "su@correo.com", required: true },
   { id: "address", bot: "Perfecto. Ahora cuénteme de la propiedad. ¿Cuál es la dirección completa?", type: "text", placeholder: "Calle, Urbanización, Municipio, Puerto Rico", required: true },
+  { id: "property_location", bot: "¿Me puede compartir la ubicación de la propiedad? Comparta su ubicación GPS (si está en la propiedad) o pegue un enlace de Google Maps — nos ayuda a localizarla exacto.", type: "location", required: false },
   { id: "reason", bot: "¿Cuál es la razón principal para vender?", type: "choice", options: ["Herencia / sucesión", "Atrasos (CRIM, hipoteca, LUMA)", "Ejecución hipotecaria", "Divorcio", "Mudanza / me voy de PR", "Propiedad con problemas", "Otra razón"] },
   { id: "asking_price", bot: "¿Tiene una idea del precio que quiere por la propiedad? (Si no está seguro, ponga un estimado y lo ajustamos juntos)", type: "money", placeholder: "150000", required: false },
   { id: "cadastre_number", bot: "¿Tiene el número de catastro? Si no lo tiene a mano, escriba 'no sé' y seguimos.", type: "text", placeholder: "###-###-###-##-###", required: false },
@@ -53,12 +56,15 @@ export const STEPS: Step[] = [
   { id: "photos_exterior", bot: "¿Puede subir 2-4 fotos del exterior? (frente, lados, patio). Ayudan muchísimo con la oferta.", type: "photos", minPhotos: 0 },
   { id: "photos_interior", bot: "Y ahora del interior — sala, cocina, baños, cuartos. Cuantas más, mejor.", type: "photos", minPhotos: 0 },
 
+  { id: "documents", bot: "¿Tiene documentos de la propiedad? Escritura, CRIM, tasación, planos, factura de LUMA/AAA — suba lo que tenga (imágenes o PDF). Es opcional, pero acelera su oferta.", type: "files", minFiles: 0 },
+
   { id: "comments", bot: "Última pregunta: ¿algo más que debamos saber? Cualquier detalle importante — situación legal, urgencia, condición especial.", type: "longtext", placeholder: "Comentarios adicionales (opcional)", required: false },
 
   { id: "submit", bot: "¡Listo! Tengo toda la información. Cuando confirme, un asesor de Realty Kings le llamará en las próximas 24 horas con su oferta cash personalizada. Gracias por su tiempo.", type: "final" },
 ];
 
-type Answer = string | boolean | number | File[];
+type LocationVal = { lat?: number; lng?: number; mapsUrl?: string };
+type Answer = string | boolean | number | File[] | LocationVal;
 
 /* ============================================================
    ChatFunnel — variant: "embedded" (hero card) | "fullscreen" (/chat)
@@ -145,6 +151,25 @@ export function ChatFunnel({
         }
       }
 
+      // Documents (escritura, CRIM, tasación, PDFs…) → same bucket, docs/ prefix
+      const documentUrls: string[] = [];
+      const docFiles = answers["documents"];
+      if (Array.isArray(docFiles)) {
+        for (const file of docFiles) {
+          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+          const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const path = `docs/${stamp}_${safe}`;
+          const up = await supabase.storage.from("lead-photos").upload(path, file);
+          if (up.error) { console.warn("Doc upload error:", up.error); continue; }
+          const { data } = supabase.storage.from("lead-photos").getPublicUrl(path);
+          documentUrls.push(data.publicUrl);
+        }
+      }
+
+      const rawLoc = answers["property_location"];
+      const loc: LocationVal | null =
+        rawLoc && typeof rawLoc === "object" && !Array.isArray(rawLoc) ? (rawLoc as LocationVal) : null;
+
       const askingPrice = Number(answers.asking_price) || null;
       const units = Number(answers.units) || null;
       const lead = {
@@ -163,9 +188,9 @@ export function ChatFunnel({
         sewer_type: String(answers.sewer_type || ""),
         structural_issues: String(answers.roof_condition || ""),
         is_inheritance: !!answers.is_inheritance,
-        notes: buildNotes(answers),
+        notes: buildNotes(answers, { documentUrls, loc }),
         photos_urls: photoUrls,
-        checklist_data: cleanForJSON(answers),
+        checklist_data: { ...cleanForJSON(answers), document_urls: documentUrls, property_location: loc || undefined },
       };
 
       const { error: insErr } = await supabase.from("leads").insert(lead);
@@ -378,7 +403,18 @@ function TypingIndicator() {
 
 function InputArea({ step, onAnswer, autoFocus = false }: { step: Step; onAnswer: (text: string, value: Answer) => void; autoFocus?: boolean }) {
   const [val, setVal] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+
+  if (step.type === "location") {
+    return <LocationInput onAnswer={onAnswer} />;
+  }
+
+  if (step.type === "photos") {
+    return <AttachmentInput imagesOnly onAnswer={onAnswer} />;
+  }
+
+  if (step.type === "files") {
+    return <AttachmentInput imagesOnly={false} onAnswer={onAnswer} />;
+  }
 
   if (step.type === "boolean") {
     return (
@@ -397,34 +433,6 @@ function InputArea({ step, onAnswer, autoFocus = false }: { step: Step; onAnswer
             {opt} <ChevronRight size={14} />
           </button>
         ))}
-      </div>
-    );
-  }
-
-  if (step.type === "photos") {
-    return (
-      <div className="space-y-3">
-        {files.length > 0 && (
-          <div className="grid grid-cols-4 gap-2">
-            {files.map((f, i) => (
-              <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-ink/5">
-                <img src={URL.createObjectURL(f)} alt={f.name} className="absolute inset-0 w-full h-full object-cover" />
-                <button onClick={() => setFiles(files.filter((_, j) => j !== i))} className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"><X size={11} /></button>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
-          <label className="flex-1 btn btn-ghost cursor-pointer !py-3">
-            <Camera size={16} />
-            {files.length > 0 ? "Agregar más" : "Tomar / Subir fotos"}
-            <input type="file" accept="image/*" multiple capture="environment" className="hidden"
-              onChange={(e) => setFiles([...files, ...Array.from(e.target.files || [])])} />
-          </label>
-          <button onClick={() => onAnswer(files.length > 0 ? `${files.length} foto(s) subida(s)` : "Sin fotos por ahora", files)} className="btn btn-blue px-5">
-            {files.length > 0 ? "Listo" : "Saltar"} <ChevronRight size={14} />
-          </button>
-        </div>
       </div>
     );
   }
@@ -469,6 +477,127 @@ function InputArea({ step, onAnswer, autoFocus = false }: { step: Step; onAnswer
 }
 
 /* ============================================================
+   Attachment input — drag & drop, multiple images or files
+   ============================================================ */
+function AttachmentInput({ imagesOnly, onAnswer }: { imagesOnly: boolean; onAnswer: (t: string, v: Answer) => void }) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [drag, setDrag] = useState(false);
+  const accept = imagesOnly ? "image/*" : "image/*,application/pdf,.pdf,.doc,.docx,.heic";
+  const noun = imagesOnly ? "foto" : "archivo";
+
+  const add = (list: FileList | null) => {
+    if (!list) return;
+    setFiles((p) => [...p, ...Array.from(list)].slice(0, 15));
+  };
+
+  return (
+    <div className="space-y-3">
+      {files.length > 0 && (imagesOnly ? (
+        <div className="grid grid-cols-4 gap-2">
+          {files.map((f, i) => (
+            <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-ink/5">
+              <img src={URL.createObjectURL(f)} alt={f.name} className="absolute inset-0 w-full h-full object-cover" />
+              <button onClick={() => setFiles(files.filter((_, j) => j !== i))} className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"><X size={11} /></button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-1.5 max-h-[160px] overflow-y-auto chat-scroll">
+          {files.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm bg-ink/5 rounded-lg px-3 py-2">
+              <FileText size={15} className="text-brandblue flex-shrink-0" />
+              <span className="flex-1 truncate">{f.name}</span>
+              <span className="text-[11px] text-ink/40 flex-shrink-0">{(f.size / 1024).toFixed(0)} KB</span>
+              <button onClick={() => setFiles(files.filter((_, j) => j !== i))} className="p-0.5 flex-shrink-0"><X size={13} /></button>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <label
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); add(e.dataTransfer.files); }}
+        className={`flex flex-col items-center justify-center gap-1 border-2 border-dashed rounded-xl py-4 px-3 cursor-pointer transition text-center ${drag ? "border-brandblue bg-brandblue-50" : "border-ink/15 hover:border-brandblue/50 hover:bg-ink/[0.02]"}`}
+      >
+        {imagesOnly ? <Camera size={18} className="text-brandblue" /> : <Paperclip size={18} className="text-brandblue" />}
+        <span className="text-sm font-semibold">
+          {files.length > 0 ? "Agregar más" : imagesOnly ? "Arrastra o toca para subir fotos" : "Arrastra o toca para subir archivos"}
+        </span>
+        <span className="text-[11px] text-ink/45">
+          {imagesOnly ? "Varias imágenes a la vez" : "Imágenes, PDF, Word — varios a la vez"}
+        </span>
+        <input type="file" accept={accept} multiple capture={imagesOnly ? "environment" : undefined} className="hidden"
+          onChange={(e) => add(e.target.files)} />
+      </label>
+
+      <button
+        onClick={() => onAnswer(files.length > 0 ? `${files.length} ${noun}${files.length !== 1 ? "s" : ""} adjunto${files.length !== 1 ? "s" : ""}` : "Sin adjuntos por ahora", files)}
+        className="btn btn-blue w-full"
+      >
+        {files.length > 0 ? "Listo" : "Saltar"} <ChevronRight size={14} />
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   Location input — GPS share + Google Maps link fallback
+   ============================================================ */
+function LocationInput({ onAnswer }: { onAnswer: (t: string, v: Answer) => void }) {
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapsUrl, setMapsUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  function share() {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setErr("Tu navegador no permite compartir ubicación. Pega un enlace de Google Maps.");
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: +pos.coords.latitude.toFixed(6), lng: +pos.coords.longitude.toFixed(6) });
+        setLoading(false);
+      },
+      () => {
+        setErr("No pudimos obtener tu ubicación. Puedes pegar un enlace de Google Maps.");
+        setLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  function submit() {
+    const value: LocationVal = { lat: coords?.lat, lng: coords?.lng, mapsUrl: mapsUrl.trim() || undefined };
+    const text = coords ? "📍 Ubicación GPS compartida" : mapsUrl.trim() ? "📍 Enlace de mapa compartido" : "Sin ubicación por ahora";
+    onAnswer(text, value);
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <button onClick={share} disabled={loading} className="btn btn-blue w-full disabled:opacity-60">
+        {loading ? (<><Loader2 size={15} className="animate-spin" /> Obteniendo ubicación...</>)
+          : coords ? (<><Check size={15} /> Ubicación capturada</>)
+          : (<><Navigation size={15} /> Compartir mi ubicación</>)}
+      </button>
+      {coords && (
+        <div className="text-xs text-brandgreen-dark flex items-center gap-1">
+          <MapPin size={12} /> {coords.lat}, {coords.lng}
+        </div>
+      )}
+      {err && <div className="text-xs text-red-600">{err}</div>}
+      <input value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)} placeholder="O pega un enlace de Google Maps (opcional)" className="input w-full text-sm" />
+      <button onClick={submit} className="btn btn-ghost w-full">
+        {coords || mapsUrl.trim() ? "Continuar" : "Saltar"} <ChevronRight size={14} />
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
    Helpers
    ============================================================ */
 function extractMunicipality(address: string): string {
@@ -478,7 +607,7 @@ function extractMunicipality(address: string): string {
   return "";
 }
 
-function buildNotes(a: Record<string, Answer>): string {
+function buildNotes(a: Record<string, Answer>, extra?: { documentUrls?: string[]; loc?: LocationVal | null }): string {
   const lines: string[] = [];
   if (a.reason) lines.push(`Razón para vender: ${a.reason}`);
   if (a.land_description) lines.push(`Solar/colindancias: ${a.land_description}`);
@@ -491,6 +620,13 @@ function buildNotes(a: Record<string, Answer>): string {
   if (a.neighboring) lines.push(`Aledañas: ${a.neighboring}`);
   if (a.obsolescence) lines.push(`Obsolescencias: ${a.obsolescence}`);
   if (a.is_inheritance !== undefined) lines.push(`Herencia: ${a.is_inheritance ? "SÍ" : "NO"}`);
+  if (extra?.loc) {
+    const p: string[] = [];
+    if (extra.loc.lat != null && extra.loc.lng != null) p.push(`GPS ${extra.loc.lat}, ${extra.loc.lng} → https://maps.google.com/?q=${extra.loc.lat},${extra.loc.lng}`);
+    if (extra.loc.mapsUrl) p.push(`Maps: ${extra.loc.mapsUrl}`);
+    if (p.length) lines.push(`Ubicación: ${p.join(" | ")}`);
+  }
+  if (extra?.documentUrls?.length) lines.push(`Documentos adjuntos (${extra.documentUrls.length}):\n${extra.documentUrls.join("\n")}`);
   if (a.comments) lines.push(`---\nComentarios del vendedor:\n${a.comments}`);
   return lines.join("\n");
 }
