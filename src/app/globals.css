@@ -1,143 +1,261 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --ink: #0a0d1a;
-  --gold: #c5a063;
-  --silver: #c8c8c8;
+  --ink: #10192e;
+  --ink-2: #1b2942;
+  --ink-3: #2a3a58;
+
+  /* Bold flyer palette — sampled from the Realty Kings ad artwork */
+  --blue:        #0b5fd4;   /* royal blue — primary brand */
+  --blue-light:  #2e7df0;
+  --blue-dark:   #072a6b;   /* deep navy for depth */
+  --blue-ink:    #061d4d;
+
+  --green:       #16a34a;   /* trust green — banners & checks */
+  --green-light: #22c55e;
+  --green-dark:  #0f7a37;
+
+  --red:         #dc2626;   /* urgency red */
+  --red-dark:    #b91c1c;
+
+  --yellow:      #f7b500;   /* bright "CASH" gold */
+  --yellow-light:#ffcb2e;
+
+  /* Champagne gold — reserved for the RK crest / heritage moments */
+  --gold: #C3A55A;
+  --gold-light: #d8be7e;
+  --gold-dark: #8b6e36;
+
+  --cream: #F4F6FB;
+  --cream-light: #ffffff;
+  --cream-paper: #eef2f9;
 }
 
 html, body {
-  background: #fafaf7;
+  background: var(--cream);
   color: var(--ink);
   font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+
+/* Poster face — the heavy condensed headline lettering from the flyers */
+.font-poster {
+  font-family: "Anton", "Arial Narrow", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+  line-height: 0.95;
+}
+
+/* Serif — kept for the chat + heritage flourishes */
 .font-display {
   font-family: "Cormorant Garamond", Georgia, serif;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.018em;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
+
+/* Poster display sizes */
+.poster-xl { font-size: clamp(2.9rem, 8.5vw, 6.5rem); line-height: 0.9; }
+.poster-lg { font-size: clamp(2.1rem, 6vw, 4rem);     line-height: 0.95; }
+.poster-md { font-size: clamp(1.5rem, 4vw, 2.6rem);   line-height: 1.0; }
+.poster-sm { font-size: clamp(1.2rem, 3vw, 1.9rem);   line-height: 1.05; }
+
+/* Editorial serif scale (legacy — chat/gracias still use these) */
+.display-xs { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.05; }
+.display-sm { font-size: clamp(2.25rem, 4vw, 3.25rem); line-height: 1.05; }
+.display-md { font-size: clamp(2.75rem, 5vw, 4rem); line-height: 1.02; }
+.display-lg { font-size: clamp(3.5rem, 7vw, 5.5rem); line-height: 1.0; letter-spacing: -0.025em; }
+.display-xl { font-size: clamp(4rem, 10vw, 8rem); line-height: 0.95; letter-spacing: -0.03em; }
+
+/* Eyebrow */
+.eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+.eyebrow-ink {
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.65;
+}
+
+/* Text accents used by the poster copy */
+.text-cash   { color: var(--yellow); }
+.text-brandblue { color: var(--blue); }
+.text-brandgreen { color: var(--green); }
+
+/* highlighter block behind a word (green banner look) */
+.hl-green {
+  background: var(--green);
+  color: white;
+  padding: 0 0.28em;
+  border-radius: 0.15em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.hl-blue { background: var(--blue); color: white; padding: 0 0.28em; border-radius: 0.15em; }
+
+/* ============================================================
+   GOLD / LINK ACCENTS (legacy — kept for chat + gracias)
+   ============================================================ */
+.gold-hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+  border: 0;
+}
+.gold-hairline-short {
+  width: 48px; height: 1px; background: var(--gold); border: 0; display: inline-block;
+}
+.link-gold {
+  background-image: linear-gradient(var(--yellow), var(--yellow));
+  background-size: 0 2px; background-repeat: no-repeat; background-position: 0 100%;
+  transition: background-size 0.35s ease; padding-bottom: 2px;
+}
+.link-gold:hover { background-size: 100% 2px; }
 
 .text-gold-shimmer {
-  background: linear-gradient(135deg, #fbf7ee 0%, #c5a063 35%, #856537 60%, #c5a063 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: linear-gradient(135deg, #f2ead0 0%, #e8d7a4 18%, #d8be7e 38%, #C3A55A 55%, #8b6e36 75%, #C3A55A 92%, #f2ead0 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: shimmer 6s ease-in-out infinite;
 }
 
-.text-silver-shimmer {
-  background: linear-gradient(135deg, #f8f8f8 0%, #c8c8c8 50%, #787878 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
+/* ============================================================
+   BUTTONS
+   ============================================================ */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.75rem;
-  border-radius: 0.625rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-  cursor: pointer;
-  border: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem;
+  padding: 0.95rem 1.85rem; border-radius: 999px;
+  font-weight: 700; font-size: 0.95rem; transition: all 0.2s ease;
+  cursor: pointer; border: none; letter-spacing: 0.01em; font-family: inherit;
 }
 
-.btn-gold {
-  background: linear-gradient(135deg, #dab86b 0%, #c5a063 50%, #856537 100%);
-  color: #0a0d1a;
-  box-shadow: 0 4px 14px 0 rgba(197, 160, 99, 0.35);
+/* Bold flyer buttons */
+.btn-blue  { background: var(--blue); color: #fff; box-shadow: 0 6px 18px rgba(11,95,212,0.28); }
+.btn-blue:hover  { background: var(--blue-light); transform: translateY(-1px); box-shadow: 0 10px 26px rgba(11,95,212,0.38); }
+
+.btn-green { background: var(--green); color: #fff; box-shadow: 0 6px 18px rgba(22,163,74,0.28); }
+.btn-green:hover { background: var(--green-light); transform: translateY(-1px); box-shadow: 0 10px 26px rgba(22,163,74,0.38); }
+
+.btn-yellow { background: linear-gradient(180deg, var(--yellow-light), var(--yellow)); color: var(--blue-ink); font-weight: 800; box-shadow: 0 6px 18px rgba(247,181,0,0.35); }
+.btn-yellow:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 10px 26px rgba(247,181,0,0.5); }
+
+.btn-red { background: var(--red); color: #fff; box-shadow: 0 6px 18px rgba(220,38,38,0.3); }
+.btn-red:hover { background: var(--red-dark); transform: translateY(-1px); }
+
+/* Legacy buttons (chat + gracias) */
+.btn-ink, .btn-dark { background: var(--ink); color: white; border: 1px solid var(--ink); }
+.btn-ink:hover, .btn-dark:hover { background: var(--ink-2); border-color: var(--ink-2); transform: translateY(-1px); }
+.btn-cream { background: #fff; color: var(--ink); }
+.btn-cream:hover { background: var(--cream); }
+.btn-gold { background: linear-gradient(180deg, var(--yellow-light), var(--yellow)); color: var(--blue-ink); font-weight: 800; box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 4px 14px rgba(247,181,0,0.3); }
+.btn-gold:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 8px 24px rgba(247,181,0,0.45); }
+.btn-ghost-light { background: transparent; color: white; border: 1.5px solid rgba(255,255,255,0.3); }
+.btn-ghost-light:hover { background: rgba(255,255,255,0.08); border-color: #fff; }
+.btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid rgba(16,25,46,0.2); }
+.btn-ghost:hover { background: rgba(16,25,46,0.04); border-color: var(--blue); }
+
+/* ============================================================
+   CHECK CHIP  — the green "Cierre Rápido / Sin Reparaciones" marks
+   ============================================================ */
+.check-chip {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  font-weight: 700; font-size: 0.95rem;
+}
+.check-chip .ck {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--green); color: #fff; flex-shrink: 0;
 }
 
-.btn-gold:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px 0 rgba(197, 160, 99, 0.5);
+/* Category card */
+.cat-card {
+  background: #fff; border-radius: 1rem; padding: 1.4rem;
+  border: 1px solid rgba(16,25,46,0.08);
+  box-shadow: 0 2px 10px rgba(16,25,46,0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.cat-card:hover { transform: translateY(-4px); box-shadow: 0 14px 34px rgba(16,25,46,0.12); border-color: rgba(11,95,212,0.35); }
+.cat-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 0.85rem;
 }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid rgba(10, 13, 26, 0.15);
+/* Gold seal badge — "20 años de experiencia" */
+.seal {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 999px; background: radial-gradient(circle at 50% 35%, #1b2942, #0a1225);
+  border: 3px solid var(--yellow); color: #fff; text-align: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
-.btn-ghost:hover {
-  background: rgba(10, 13, 26, 0.04);
-}
-
-.btn-dark {
-  background: var(--ink);
-  color: white;
-}
-
-.btn-dark:hover {
-  background: #1a1e2e;
-}
-
+/* ============================================================
+   FORMS
+   ============================================================ */
 .input {
-  width: 100%;
-  padding: 0.875rem 1rem;
-  border-radius: 0.625rem;
-  border: 1.5px solid rgba(10, 13, 26, 0.12);
-  background: white;
-  font-size: 1rem;
-  transition: border-color 0.15s;
-  font-family: inherit;
+  width: 100%; padding: 0.9rem 1.1rem; border-radius: 0.6rem;
+  border: 1.5px solid rgba(16,25,46,0.14); background: white;
+  font-size: 1rem; color: var(--ink); transition: all 0.2s ease; font-family: inherit;
 }
+.input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(11,95,212,0.15); }
+.input::placeholder { color: rgba(16,25,46,0.4); }
 
-.input:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(197, 160, 99, 0.15);
-}
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card { background: white; border-radius: 1rem; box-shadow: 0 2px 14px rgba(16,25,46,0.06); }
+.card-paper { background: var(--cream-paper); border-radius: 1rem; }
 
-.card {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 10px rgba(10, 13, 26, 0.05);
-}
+/* ============================================================
+   CHAT BUBBLES
+   ============================================================ */
+.chat-bubble-bot { background: #fff; border: 1px solid rgba(11,95,212,0.14); color: var(--ink); }
+.chat-bubble-user { background: var(--blue); color: white; }
 
-.gold-border {
-  border: 1px solid transparent;
-  background: linear-gradient(white, white) padding-box,
-              linear-gradient(135deg, #fbf7ee 0%, #c5a063 35%, #856537 70%, #c5a063 100%) border-box;
-}
+.chat-scroll::-webkit-scrollbar { width: 6px; }
+.chat-scroll::-webkit-scrollbar-thumb { background: rgba(11,95,212,0.35); border-radius: 3px; }
 
-/* Chat bubble styling */
-.chat-bubble-bot {
-  background: linear-gradient(135deg, #f8f5ec 0%, #f0e9d4 100%);
-  border: 1px solid rgba(197, 160, 99, 0.2);
-}
-
-.chat-bubble-user {
-  background: var(--ink);
-  color: white;
-}
-
-/* Scrollbar styling */
-.chat-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-scroll::-webkit-scrollbar-thumb {
-  background: rgba(197, 160, 99, 0.4);
-  border-radius: 3px;
-}
-
-/* Typewriter dot */
-@keyframes typing {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
-.dot {
-  animation: typing 1.4s ease-in-out infinite;
-}
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes typing { 0%,100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+.dot { animation: typing 1.4s ease-in-out infinite; }
 .dot:nth-child(2) { animation-delay: 0.2s; }
 .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slow-zoom { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+@keyframes pulse-gold { 0%,100% { box-shadow: 0 0 0 0 rgba(247,181,0,0.5); } 50% { box-shadow: 0 0 0 14px rgba(247,181,0,0); } }
+@keyframes pulse-green { 0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.5); } 50% { box-shadow: 0 0 0 14px rgba(22,163,74,0); } }
+.animate-fade-up { animation: fade-up 0.7s ease-out both; }
+.animate-fade-in { animation: fade-in 0.5s ease-out both; }
+.animate-slow-zoom { animation: slow-zoom 18s ease-out infinite alternate; }
+.animate-pulse-gold { animation: pulse-gold 2.4s ease-in-out infinite; }
+.animate-pulse-green { animation: pulse-green 2.2s ease-in-out infinite; }
+.delay-100 { animation-delay: 0.1s; } .delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; } .delay-400 { animation-delay: 0.4s; } .delay-500 { animation-delay: 0.5s; }
+
+::selection { background: var(--blue); color: white; }
+
+/* Blueprint dot texture for blue sections */
+.dot-grid {
+  background-image: radial-gradient(rgba(255,255,255,0.09) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
