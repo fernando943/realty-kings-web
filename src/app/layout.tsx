@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/react";
 
 // NOTE: update SITE_URL to the custom domain once purchased (GTM-01/02).
-const SITE_URL = "https://realty-kings-web.vercel.app";
+const SITE_URL = "https://realtykingspr.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

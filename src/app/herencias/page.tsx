@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_PR",
-    url: "https://realty-kings-web.vercel.app/herencias",
+    url: "https://realtykingspr.com/herencias",
     siteName: "Realty Kings PR",
     title: "Compramos Casas Heredadas en Puerto Rico",
     description: "Sucesiones, múltiples herederos, deudas de CRIM — la compramos cash. Oferta en 24h. 787-667-4033.",
