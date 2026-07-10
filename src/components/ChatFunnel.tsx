@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { track } from "@vercel/analytics";
 
 /* ============================================================
    STEPS — the Realty Kings acquisition questionnaire
@@ -86,6 +87,9 @@ export function ChatFunnel({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const mountedAt = useRef(Date.now());
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  const utmRef = useRef<Record<string, string>>({});
 
   const step = STEPS[stepIdx];
   const progress = Math.round((stepIdx / STEPS.length) * 100);
@@ -97,6 +101,18 @@ export function ChatFunnel({
       setHistory([{ role: "bot", content: renderTemplate(STEPS[0].bot, answers), stepId: STEPS[0].id }]);
       setTyping(false);
     }, 500);
+    // capture attribution + fire funnel-start event
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const u: Record<string, string> = {};
+      ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid", "ref"].forEach((k) => {
+        const v = p.get(k);
+        if (v) u[k] = v;
+      });
+      u.referrer = document.referrer || "";
+      utmRef.current = u;
+    } catch {}
+    track("chat_started", { variant });
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -132,6 +148,12 @@ export function ChatFunnel({
   async function submitLead() {
     setSubmitting(true);
     setError(null);
+    // Bot protection: honeypot filled, or funnel "completed" impossibly fast for a human.
+    const elapsedMs = Date.now() - mountedAt.current;
+    if (honeypotRef.current?.value || elapsedMs < 8000) {
+      router.push("/gracias"); // silently drop — don't insert a bot lead
+      return;
+    }
     try {
       if (!supabase) throw new Error("Servidor no configurado. Llame al 787-667-9389.");
 
@@ -190,12 +212,17 @@ export function ChatFunnel({
         is_inheritance: !!answers.is_inheritance,
         notes: buildNotes(answers, { documentUrls, loc }),
         photos_urls: photoUrls,
-        checklist_data: { ...cleanForJSON(answers), document_urls: documentUrls, property_location: loc || undefined },
+        checklist_data: { ...cleanForJSON(answers), document_urls: documentUrls, property_location: loc || undefined, utm: utmRef.current, completed_ms: elapsedMs },
       };
 
       const { error: insErr } = await supabase.from("leads").insert(lead);
       if (insErr) throw insErr;
 
+      track("lead_submitted", {
+        municipality: lead.municipality || "n/a",
+        reason: String(answers.reason || "n/a"),
+        source: utmRef.current.utm_source || "direct",
+      });
       router.push("/gracias");
     } catch (e: any) {
       setError(e?.message || "Algo falló. Intente de nuevo o llame al 787-667-9389.");
@@ -217,6 +244,8 @@ export function ChatFunnel({
 
       <div className="border-t border-ink/10 bg-white flex-shrink-0">
         <div className={`mx-auto ${isFull ? "max-w-2xl px-5 py-4" : "px-4 py-3"}`}>
+          {/* honeypot: real users never see/fill this; bots do */}
+          <input ref={honeypotRef} type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
           {!typing && step && step.id !== "submit" ? (
             <InputArea step={step} autoFocus={isFull} onAnswer={(t, v) => advance(t, v)} />
           ) : !typing && step?.id === "submit" ? (
