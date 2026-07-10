@@ -90,6 +90,31 @@ Traffic strategy mirrors what already works for RK offline (flyers/billboards) p
 
 ---
 
+## Phase H — Hardening (do BEFORE spending on ads; a leak during a campaign is the worst time)
+
+Found during a 2026-06-16 review — the earlier RLS lockdown was **incomplete**.
+
+| ID | Task | Owner | Acceptance criteria |
+|---|---|---|---|
+| GTM-00 | **🔴 CRITICAL: close the `rk_exec_sql` RPC hole.** It's SECURITY DEFINER (bypasses RLS); anon can still read ALL tenant PII (161 names+phones confirmed leaking). Fix: `revoke execute on function public.rk_exec_sql(text) from anon, public; grant execute ... to authenticated;` (SQL already staged in Fernando's Supabase editor). | OPUS/FERNANDO | Anon `rpc/rk_exec_sql` returns permission error; Smart Lists still works when logged in |
+| GTM-H1 | **Storage bucket audit.** `lead-photos` is public + anon-writable (spam-upload + enumerable read of all lead/phase photos). Confirm the `documents` bucket (escrituras/CRIM = legal PII) is PRIVATE + served via signed URLs; scope `lead-photos` write policy; consider a separate private bucket for portal/phase uploads. | OPUS | No public read of documents bucket; anon cannot write arbitrary files |
+| GTM-H2 | **Rate-limit + protect API routes.** `/api/ai/*` (burns Anthropic budget) and `/api/portal/[token]` (token brute-force) have zero limits. Add Upstash/Vercel rate limiting; add a daily AI spend guard (cap on `ai_runs.cost_usd`); portal: throttle + optional single-use/short-expiry tokens + set `used_at`. | OPUS + FERNANDO (Upstash acct) | Repeated calls throttle; AI spend capped |
+| GTM-H3 | **Funnel spam/bot protection.** Add Cloudflare Turnstile (or honeypot) to the chat submit + lead dedup on phone/address (avoid double leads). | OPUS | Bot submits blocked; duplicate seller → single lead |
+| GTM-H4 | **Error monitoring.** Sentry (free) on both apps — you won't know prod is broken otherwise. | OPUS + FERNANDO (Sentry acct) | A thrown error appears in Sentry |
+| GTM-H5 | **Backups.** Confirm Supabase PITR/daily backups are ON (Pro). One bad migration = data loss. | FERNANDO | Backups verified enabled |
+| GTM-H6 | **Mobile/a11y QA.** Most PR sellers are mobile — full pass on the funnel + portal on a real phone. | OPUS | No layout breaks; tap targets ok |
+
+## GTM betterments (add to Phase 2/3 — high ROI for PR home-buying)
+
+| ID | Task | Owner | Why |
+|---|---|---|---|
+| GTM-B1 | **WhatsApp-first CTA.** `wa.me/17876679389` button on hero + a "hablar por WhatsApp" option in the chat. | OPUS | PR is WhatsApp-first; often outconverts a web form for high-trust sales |
+| GTM-B2 | **Speed-to-lead auto-SMS.** On submit, instant SMS to the seller ("recibimos tu info, te llamamos en 24h") via Twilio. | OPUS + FERNANDO (Twilio) | Kills ghosting; reinforces the 24h promise the site makes |
+| GTM-B3 | **Meta retargeting pixel** + audience of funnel-abandoners. | OPUS + FERNANDO (pixel) | Home-selling is high-consideration; retargeting is the highest-ROI ad spend |
+| GTM-B4 | **Call tracking** on both numbers (CallRail or similar). | FERNANDO | Attribute calls to channels, not just form fills — half your leads will call |
+| GTM-B5 | **Auto Google-review request** after a closing. | OPUS + TEAM | Fuels the Google Business Profile (GTM-06); reviews are the #1 local-SEO lever |
+| GTM-B6 | **Bilingual toggle (EN)** for stateside heirs selling inherited PR property — a real segment (herencias). | OPUS | The herencias use case often = a mainland-based heir |
+
 ## Decisions needed from Fernando (blockers, in order)
 1. **GTM-01** Domain choice + purchase (everything in Phase 0 hangs on it; GTM-03/04/05 can proceed on vercel.app in parallel but should re-verify after domain).
 2. **GTM-03** Notification recipient emails (+ create free Resend account, or hand Opus an API key via Vercel env `RESEND_API_KEY`).
