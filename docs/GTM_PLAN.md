@@ -4,6 +4,8 @@
 **How to use this doc:** Open a Claude Code session in this repo (or `../realty-kings-crm`) and say:
 > "Execute Phase 0 of docs/GTM_PLAN.md" (then Phase 1, 2, 3, 4 in order)
 
+**🌐 DOMAIN LIVE (2026-06-16):** GTM-01/02 DONE. Fernando already owned `realtykingspr.com` (GoDaddy). Attached apex + www to the Vercel web project; set GoDaddy DNS `A @ → 76.76.21.21` (kept GoDaddy nameservers, no MX/email touched); Vercel verified + issued SSL. **https://realtykingspr.com is live** (apex + www, HTTP/2, valid cert). All canonical/OG/sitemap/JSON-LD now use the real domain. (CRM still at realty-kings-crm.vercel.app — could later get app.realtykingspr.com.)
+
 **✅ Already shipped (2026-06-16, no-dependency items done ahead of the Opus run):**
 - GTM-00 + GTM-H1 — both critical PII leaks CLOSED & verified (rk_exec_sql RPC + documents storage bucket)
 - GTM-05 — full SEO pass live (title/desc/keywords, sitemap.xml, robots.txt, JSON-LD RealEstateAgent, OG/Twitter)
