@@ -11,6 +11,9 @@
 - GTM-20 (partial) — UTM/referrer capture into `leads.checklist_data.utm` (source reporting works once ads run).
 - GTM-H3 (partial) — funnel bot protection live (honeypot + <8s timing drop). **Still TODO: lead dedup** — needs a server route (anon has INSERT-only on `leads`, can't SELECT to dedup client-side).
 - GTM-B1 — WhatsApp floating CTA live (`wa.me/17876679389`, prefilled es message).
+- GTM-23 — `/herencias` landing page LIVE (red flyer theme, embedded chat, herencias FAQ, 787-667-4033 + WhatsApp, own SEO/OG, in sitemap). Destination for herencias ads + the herencias phone line.
+- GTM-32 — CRM portal maintenance-request inbox LIVE on /maintenance (staff see tenant portal requests → convert to ticket / resolve). Closes the tenant-portal loop.
+- **Remaining no-dependency item:** GTM-H3 lead dedup — needs a small server route (`/api/submit-lead` using service-role to dedup on phone before insert); deferred (touches the live funnel submit path — do it as a focused change).
 
 Each task has an ID, an **owner** (`OPUS` = Claude executes it; `FERNANDO` = human decision/purchase; `TEAM` = RK staff action), and **acceptance criteria** (the "done" test). Opus: verify every acceptance criterion before marking a task complete — no demo-ware.
 
