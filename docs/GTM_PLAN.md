@@ -4,6 +4,14 @@
 **How to use this doc:** Open a Claude Code session in this repo (or `../realty-kings-crm`) and say:
 > "Execute Phase 0 of docs/GTM_PLAN.md" (then Phase 1, 2, 3, 4 in order)
 
+**✅ Already shipped (2026-06-16, no-dependency items done ahead of the Opus run):**
+- GTM-00 + GTM-H1 — both critical PII leaks CLOSED & verified (rk_exec_sql RPC + documents storage bucket)
+- GTM-05 — full SEO pass live (title/desc/keywords, sitemap.xml, robots.txt, JSON-LD RealEstateAgent, OG/Twitter)
+- GTM-04 (partial) — Vercel Analytics + funnel events live: `chat_started`, `lead_submitted`, `tel_click`, `whatsapp_click`. **Still needs Fernando: GA4 property id** for the GA4 half.
+- GTM-20 (partial) — UTM/referrer capture into `leads.checklist_data.utm` (source reporting works once ads run).
+- GTM-H3 (partial) — funnel bot protection live (honeypot + <8s timing drop). **Still TODO: lead dedup** — needs a server route (anon has INSERT-only on `leads`, can't SELECT to dedup client-side).
+- GTM-B1 — WhatsApp floating CTA live (`wa.me/17876679389`, prefilled es message).
+
 Each task has an ID, an **owner** (`OPUS` = Claude executes it; `FERNANDO` = human decision/purchase; `TEAM` = RK staff action), and **acceptance criteria** (the "done" test). Opus: verify every acceptance criterion before marking a task complete — no demo-ware.
 
 ---
