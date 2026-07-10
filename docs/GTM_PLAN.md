@@ -13,7 +13,9 @@
 - GTM-B1 — WhatsApp floating CTA live (`wa.me/17876679389`, prefilled es message).
 - GTM-23 — `/herencias` landing page LIVE (red flyer theme, embedded chat, herencias FAQ, 787-667-4033 + WhatsApp, own SEO/OG, in sitemap). Destination for herencias ads + the herencias phone line.
 - GTM-32 — CRM portal maintenance-request inbox LIVE on /maintenance (staff see tenant portal requests → convert to ticket / resolve). Closes the tenant-portal loop.
-- **Remaining no-dependency item:** GTM-H3 lead dedup — needs a small server route (`/api/submit-lead` using service-role to dedup on phone before insert); deferred (touches the live funnel submit path — do it as a focused change).
+- GTM-H3 lead dedup — DONE as staff-side flagging on the CRM leads board (leads sharing a phone get a "⚠ Posible duplicado" badge). Chosen over hard dedup because a lead-gen funnel must NEVER drop a submission — flag, don't block.
+
+**→ ALL no-dependency GTM work is now shipped. Everything below this line needs a Fernando account/decision (domain, Resend, GA4, ad accounts+budgets, Google Business, Sentry/Upstash, staff logins). Hand to Opus once those are provided.**
 
 Each task has an ID, an **owner** (`OPUS` = Claude executes it; `FERNANDO` = human decision/purchase; `TEAM` = RK staff action), and **acceptance criteria** (the "done" test). Opus: verify every acceptance criterion before marking a task complete — no demo-ware.
 
